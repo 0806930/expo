@@ -22,18 +22,23 @@ public typealias UpdatesManifestBlock = (_ manifest: [String: Any]) -> Bool
  */
 @objc(EXUpdatesInterface)
 public protocol UpdatesInterface {
+  /**
+   * These properties are set for all controllers
+   */
   @objc var runtimeVersion: String? { get }
   @objc var updateURL: URL? { get }
   @objc var isEnabled: Bool { get }
-}
-
-/**
- * Implemented only by the enabled updates controller
- */
-public protocol UpdatesEnabledInterface: UpdatesInterface {
-  var launchedUpdateId: UUID? { get }
-  var embeddedUpdateId: UUID? { get }
-  var stateChangeListener: (any UpdatesStateChangeListener)? { get set }
+  /**
+   * These properties are only set when updates is enabled
+   */
+  @objc var launchedUpdateId: UUID? { get }
+  @objc var embeddedUpdateId: UUID? { get }
+  /**
+   * User code or third party modules can add a listener that will be called
+   * on updates state machine transitions (only when updates is enabled)
+   */
+  @objc func subscribeToUpdatesStateChanges(_ listener: any UpdatesStateChangeListener) -> String
+  @objc func unsubscribeFromUpdatesStateChanges(_ subscriptionId: String)
 }
 
 /**
@@ -69,6 +74,7 @@ public protocol UpdatesExternalInterfaceDelegate {
   @objc func updatesExternalInterfaceDidRequestRelaunch(_ updatesExternalInterface: UpdatesDevLauncherInterface)
 }
 
+@objc(EXUpdatesStateChangeListener)
 public protocol UpdatesStateChangeListener {
-  func updatesStateDidChange(_ event: UpdatesStateEvent)
+  func updatesStateDidChange(_ event: [String: Any])
 }

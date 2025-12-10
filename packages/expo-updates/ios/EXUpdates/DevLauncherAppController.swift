@@ -46,6 +46,16 @@ enum DevLauncherAppControllerError: Int, Error, LocalizedError {
 @objc(EXUpdatesDevLauncherController)
 @objcMembers
 public final class DevLauncherAppController: NSObject, InternalAppControllerInterface, UpdatesDevLauncherInterface {
+  public func subscribeToUpdatesStateChanges(_ listener: any UpdatesStateChangeListener) -> String {
+    return ""
+  }
+
+  public func unsubscribeFromUpdatesStateChanges(_ subscriptionId: String) {}
+
+  public var launchedUpdateId: UUID? = nil
+
+  public var embeddedUpdateId: UUID? = nil
+
   public var isEnabled: Bool
 
   public let eventManager: UpdatesEventManager = NoOpUpdatesEventManager()

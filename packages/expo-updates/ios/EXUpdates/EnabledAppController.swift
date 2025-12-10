@@ -7,7 +7,7 @@ import EXUpdatesInterface
 /**
  * Updates controller for applications that have updates enabled and properly-configured.
  */
-public class EnabledAppController: InternalAppControllerInterface, UpdatesEnabledInterface, StartupProcedureDelegate {
+public class EnabledAppController: InternalAppControllerInterface, UpdatesInterface, StartupProcedureDelegate {
   public weak var delegate: AppControllerDelegate?
   public var reloadScreenManager: Reloadable? = ReloadScreenManager()
 
@@ -158,9 +158,21 @@ public class EnabledAppController: InternalAppControllerInterface, UpdatesEnable
     stateMachine.queueExecution(stateMachineProcedure: procedure)
   }
 
-  // MARK: - UpdatesEnabledInterface
+  // MARK: - UpdatesInterface
 
-  public var stateChangeListener: (any UpdatesStateChangeListener)?
+  internal var stateChangeListeners: [String:any UpdatesStateChangeListener] = [:]
+
+  public func subscribeToUpdatesStateChanges(_ listener: any UpdatesStateChangeListener) -> String {
+    let subscriptionId = UUID().uuidString
+    stateChangeListeners[subscriptionId] = listener
+    return subscriptionId
+  }
+
+  public func unsubscribeFromUpdatesStateChanges(_ subscriptionId: String) {
+    if stateChangeListeners[subscriptionId] != nil {
+      stateChangeListeners.removeValue(forKey: subscriptionId)
+    }
+  }
 
   public var runtimeVersion: String? {
     return config.runtimeVersion

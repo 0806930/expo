@@ -7,27 +7,13 @@ let e2eEventName = "Expo.updatesE2EStateChangeEvent"
 
 public final class E2ETestModule: Module, UpdatesStateChangeListener {
   private let methodQueue = DispatchQueue(label: "expo.modules.EXUpdatesQueue")
-  private var updatesController: (any UpdatesEnabledInterface)?
+  private var updatesController: (any UpdatesInterface)?
   private var hasListener: Bool = false
+  private var subscriptionId: String? = nil
 
-  public func updatesStateDidChange(_ event: UpdatesStateEvent) {
+  public func updatesStateDidChange(_ event: [String : Any]) {
     if (hasListener) {
-      var payload: [String: Any] = [ "type" : "\(event.type)" ]
-      switch (event) {
-      case let .checkCompleteWithUpdate(manifest):
-        payload["type"] = "checkCompleteWithUpdate"
-        payload["manifest"] = manifest
-        break;
-      case let .checkCompleteWithRollback(commitTime):
-        payload["type"] = "checkCompleteWithRollback"
-        break;
-      case let .downloadCompleteWithUpdate(manifest):
-        payload["manifest"] = manifest
-        break;
-      default:
-        break;
-      }
-      sendEvent(e2eEventName, payload)
+      sendEvent(e2eEventName, event)
     }
   }
 
@@ -41,9 +27,9 @@ public final class E2ETestModule: Module, UpdatesStateChangeListener {
     Events([e2eEventName])
 
     OnCreate {
-      if let controller = UpdatesControllerRegistry.sharedInstance.controller as? UpdatesEnabledInterface {
+      if let controller = UpdatesControllerRegistry.sharedInstance.controller {
         updatesController = controller
-        controller.stateChangeListener = self
+        subscriptionId = controller.subscribeToUpdatesStateChanges(self)
       }
     }
 
@@ -56,7 +42,10 @@ public final class E2ETestModule: Module, UpdatesStateChangeListener {
     }
 
     OnDestroy {
-      updatesController?.stateChangeListener = nil
+      if let subscriptionId,
+         let updatesController {
+        updatesController.unsubscribeFromUpdatesStateChanges(subscriptionId)
+      }
       updatesController = nil
     }
 

@@ -11,6 +11,16 @@ import EXUpdatesInterface
  * - Configuration errors (missing required configuration)
  */
 public class DisabledAppController: InternalAppControllerInterface, UpdatesInterface {
+  public func subscribeToUpdatesStateChanges(_ listener: any UpdatesStateChangeListener) -> String {
+    return ""
+  }
+
+  public func unsubscribeFromUpdatesStateChanges(_ subscriptionId: String) {}
+
+  public var launchedUpdateId: UUID? = nil
+
+  public var embeddedUpdateId: UUID? = nil
+
   public var reloadScreenManager: Reloadable?
 
   public let isActiveController = false

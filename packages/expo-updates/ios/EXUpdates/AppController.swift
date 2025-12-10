@@ -274,7 +274,7 @@ public class AppController: NSObject {
         let directory = try initializeUpdatesDirectory()
         try initializeUpdatesDatabase(updatesDatabase: updatesDatabase, inUpdatesDirectory: directory, logger: logger)
         _sharedInstance = EnabledAppController(config: config, database: updatesDatabase, updatesDirectory: directory)
-        UpdatesControllerRegistry.sharedInstance.controller = _sharedInstance as? (any UpdatesEnabledInterface)
+        UpdatesControllerRegistry.sharedInstance.controller = _sharedInstance as? (any UpdatesInterface)
       } catch {
         let cause = UpdatesError.appControllerInitializationError(cause: error)
         logger.error(
