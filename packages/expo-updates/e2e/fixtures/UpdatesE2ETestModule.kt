@@ -6,13 +6,14 @@ import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import expo.modules.kotlin.types.Enumerable
 import expo.modules.updatesinterface.UpdatesControllerRegistry
-import expo.modules.updatesinterface.UpdatesEnabledInterface
+import expo.modules.updatesinterface.UpdatesInterface
 import expo.modules.updatesinterface.UpdatesStateChangeListener
-import expo.modules.updatesinterface.statemachine.UpdatesStateEvent
+import org.json.JSONObject
 
 class UpdatesE2ETestModule : Module(), UpdatesStateChangeListener {
   private var hasListener: Boolean = false
-  private var updatesController: UpdatesEnabledInterface? = null
+  private var updatesController: UpdatesInterface? = null
+  private var subscriptionId: String? = null
 
   override fun definition() = ModuleDefinition {
     Name("ExpoUpdatesE2ETest")
@@ -21,9 +22,9 @@ class UpdatesE2ETestModule : Module(), UpdatesStateChangeListener {
 
     OnCreate {
       UpdatesControllerRegistry.controller?.get()?.let {
-        if (it is UpdatesEnabledInterface) {
+        if (it is UpdatesInterface) {
+          subscriptionId = it.subscribeToUpdatesStateChanges(this@UpdatesE2ETestModule)
           updatesController = it
-          it.stateChangeListener = this@UpdatesE2ETestModule
         }
       }
     }
@@ -37,8 +38,12 @@ class UpdatesE2ETestModule : Module(), UpdatesStateChangeListener {
     }
 
     OnDestroy {
-      updatesController?.stateChangeListener = null
-      updatesController = null
+      UpdatesControllerRegistry.controller?.get()?.let {
+        if (it is UpdatesInterface) {
+          it.unsubscribeFromUpdatesStateChanges(subscriptionId ?: "")
+          updatesController = null
+        }
+      }
     }
 
     Function("getLaunchedUpdateId") {
@@ -79,28 +84,15 @@ class UpdatesE2ETestModule : Module(), UpdatesStateChangeListener {
     }
   }
 
-  override fun updatesStateDidChange(event: UpdatesStateEvent) {
+  override fun updatesStateDidChange(event: Map<String, Any>) {
     if (hasListener) {
       val payload = Bundle()
-      payload.putString("type", event.type.type)
-      when(event) {
-        is UpdatesStateEvent.CheckCompleteWithUpdate -> {
-          val manifest = event.manifest
-          val manifestBundle = Bundle()
-          manifestBundle.putString("id", manifest.getString("id"))
-          payload.putBundle("manifest", manifestBundle)
-          payload.putString("type", "checkCompleteWithUpdate")
-        }
-        is UpdatesStateEvent.CheckCompleteWithRollback -> {
-          payload.putString("type", "checkCompleteWithRollback")
-        }
-        is UpdatesStateEvent.DownloadCompleteWithUpdate -> {
-          val manifest = event.manifest
-          val manifestBundle = Bundle()
-          manifestBundle.putString("id", manifest.getString("id"))
-          payload.putBundle("manifest", manifestBundle)
-        }
-        else -> {}
+      payload.putString("type", event["type"] as String)
+      val manifest = event["manifest"] as JSONObject
+      if (manifest != null) {
+        val manifestBundle = Bundle()
+        manifestBundle.putString("id", manifest.getString("id"))
+        payload.putBundle("manifest", manifestBundle)
       }
       sendEvent(UpdatesE2EEvent.StateChange, payload)
     }

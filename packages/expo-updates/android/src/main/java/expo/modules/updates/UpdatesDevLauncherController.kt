@@ -31,6 +31,7 @@ import expo.modules.updates.selectionpolicy.SelectionPolicy
 import expo.modules.updates.statemachine.UpdatesStateContext
 import expo.modules.updatesinterface.UpdatesDevLauncherInterface
 import expo.modules.updatesinterface.UpdatesInterfaceCallbacks
+import expo.modules.updatesinterface.UpdatesStateChangeListener
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -137,6 +138,12 @@ class UpdatesDevLauncherController(
 
   override val updateUrl: Uri?
     get() = updatesConfiguration?.updateUrl
+
+  override fun subscribeToUpdatesStateChanges(listener: UpdatesStateChangeListener): String {
+    return ""
+  }
+
+  override fun unsubscribeFromUpdatesStateChanges(subscriptionId: String) {}
 
   /**
    * Fetch an update using a dynamically generated configuration object (including a potentially

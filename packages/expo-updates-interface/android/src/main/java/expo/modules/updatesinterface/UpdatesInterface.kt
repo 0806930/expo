@@ -13,18 +13,23 @@ import java.util.UUID
  * All updates controllers implement this protocol
  */
 interface UpdatesInterface {
+  /**
+   * These properties are set for all controllers
+   */
   val runtimeVersion: String?
   val updateUrl: Uri?
   val isEnabled: Boolean get() = false
-}
-
-/**
- * Implemented only by the enabled updates controller
- */
-interface UpdatesEnabledInterface: UpdatesInterface {
+  /**
+   * These properties are only set when updates is enabled
+   */
   val launchedUpdateId: UUID? get() = null
   val embeddedUpdateId: UUID? get() = null
-  var stateChangeListener: UpdatesStateChangeListener?
+  /**
+   * User code or third party modules can add a listener that will be called
+   * on updates state machine transitions (only when updates is enabled)
+   */
+  fun subscribeToUpdatesStateChanges(listener: UpdatesStateChangeListener): String
+  fun unsubscribeFromUpdatesStateChanges(subscriptionId: String)
 }
 
 /**
@@ -57,5 +62,5 @@ interface UpdatesDevLauncherInterface: UpdatesInterface {
 }
 
 interface UpdatesStateChangeListener {
-  fun updatesStateDidChange(event: UpdatesStateEvent)
+  fun updatesStateDidChange(event: Map<String, Any>)
 }

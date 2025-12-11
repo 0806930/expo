@@ -6,7 +6,6 @@ import expo.modules.updates.logging.UpdatesLogger
 import expo.modules.updates.procedures.StateMachineProcedure
 import expo.modules.updates.procedures.StateMachineSerialExecutorQueue
 import expo.modules.updatesinterface.UpdatesControllerRegistry
-import expo.modules.updatesinterface.UpdatesEnabledInterface
 import expo.modules.updatesinterface.statemachine.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -69,6 +68,20 @@ class UpdatesStateMachine(
     sendContextToJS()
   }
 
+  private fun toMap(event: UpdatesStateEvent): Map<String, Any> {
+    return when (event) {
+      is UpdatesStateEvent.DownloadCompleteWithUpdate -> mapOf("type" to event.type.type, "manifest" to event.manifest)
+      is UpdatesStateEvent.CheckCompleteWithUpdate -> mapOf("type" to "checkCompleteWithUpdate", "manifest" to event.manifest)
+      is UpdatesStateEvent.CheckCompleteWithRollback -> mapOf("type" to "checkCompleteWithRollback")
+      is UpdatesStateEvent.CheckError -> mapOf("type" to event.type.type, "errorMessage" to event.error.message)
+      is UpdatesStateEvent.DownloadError -> mapOf("type" to event.type.type, "errorMessage" to event.error.message)
+      is UpdatesStateEvent.DownloadProgress -> mapOf("type" to event.type.type, "progress" to event.progress)
+      else -> mapOf("type" to event.type.type)
+    }
+  }
+
+  private fun mapOf(pairs: String, pairs2: String) {}
+
   /**
    * Transition the state machine forward to a new state.
    */
@@ -77,9 +90,11 @@ class UpdatesStateMachine(
       context = reduceContext(context, event)
       logger.info("Updates state change: ${event.type}, context = ${context.json}")
       UpdatesControllerRegistry.controller?.get()?.let {
-        if (it is UpdatesEnabledInterface) {
+        if (it is EnabledUpdatesController) {
           // Notify the controller state change listener
-          it.stateChangeListener?.updatesStateDidChange(event)
+          it.stateChangeListenerMap.keys.forEach { key ->
+            it.stateChangeListenerMap[key]?.updatesStateDidChange(toMap(event))
+          }
         }
       }
       sendContextToJS()
